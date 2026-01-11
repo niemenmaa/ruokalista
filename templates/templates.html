@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Viikkopohjat - Ruokalista{% endblock %}
+
+{% block content %}
+<header class="top-header">
+    <h1>Viikkopohjat</h1>
+</header>
+
+<p>Luo viikkopohjia, joita voit käyttää nopeasti viikon ruokien suunnitteluun.</p>
+
+<form method="post" action="{{ url_for('new_template') }}" class="form-row">
+    <input type="text" name="name" placeholder="Uuden pohjan nimi" required style="flex: 1;">
+    <input type="number" name="meal_count" value="7" min="1" max="14" style="width: 8rem;" title="Ruokien määrä">
+    <button type="submit">Luo pohja</button>
+</form>
+
+{% if templates %}
+<ul class="recipe-list">
+    {% for template in templates %}
+    <li>
+        <a href="{{ url_for('template_detail', template_id=template.id) }}">
+            <strong>{{ template.name }}</strong>
+        </a>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p><em>Ei vielä pohjia. Luo ensimmäinen yllä.</em></p>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Tämä viikko - Ruokalista{% endblock %}
+
+{% block content %}
+<header class="top-header">
+    <h1>Tämän viikon ruuat</h1>
+    <small>{{ week_start.strftime('%d.%m.') }} - {{ week_end.strftime('%d.%m.%Y') }}</small>
+</header>
+
+<div class="btn-group" style="margin-bottom: 1rem;">
+    <a href="{{ url_for('week_setup') }}" role="button" class="outline">Muokkaa viikkoa</a>
+</div>
+
+{% for day_num in range(7) %}
+<div class="day-section {{ 'today' if day_num == today else '' }}">
+    <h3>{{ days[day_num] }}{% if day_num == today %} (tänään){% endif %}</h3>
+    
+    {% if meals_by_day[day_num] %}
+        {% for meal in meals_by_day[day_num] %}
+        <div class="meal-card {{ 'done' if meal.is_done else '' }}">
+            <span 
+                class="toggle {{ 'done' if meal.is_done else '' }}"
+                hx-post="{{ url_for('toggle_meal', meal_id=meal.id) }}"
+                hx-swap="innerHTML"
+            >
+                {{ '✓' if meal.is_done else '○' }}
+            </span>
+            <a href="{{ url_for('recipe', slug=meal.slug) }}" class="title">
+                {{ meal.recipe.title if meal.recipe else meal.slug }}
+            </a>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p class="empty">Ei ruokaa suunniteltuna</p>
+    {% endif %}
+</div>
+{% endfor %}
+
+{% endblock %}

@@ -1,0 +1,17 @@
+[Unit]
+Description=Ruokalista Flask App
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/ruokalista
+Environment="PATH=/opt/ruokalista/venv/bin"
+ExecStart=/opt/ruokalista/venv/bin/gunicorn -b 10.0.0.1:5000 app:app
+
+# Restart on failure
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

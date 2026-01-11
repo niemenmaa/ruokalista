@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Ruokalista{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        :root {
+            --pico-font-family: 'Segoe UI', system-ui, sans-serif;
+            --primary: #e07a5f;
+            --primary-hover: #c4613f;
+        }
+        
+        body {
+            padding-bottom: 80px;
+        }
+        
+        /* Navigation */
+        nav.bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--pico-card-background-color);
+            border-top: 1px solid var(--pico-muted-border-color);
+            padding: 0.5rem;
+            display: flex;
+            justify-content: space-around;
+            z-index: 100;
+        }
+        
+        nav.bottom-nav a {
+            text-decoration: none;
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--pico-muted-color);
+            padding: 0.25rem 0.5rem;
+        }
+        
+        nav.bottom-nav a.active {
+            color: var(--primary);
+        }
+        
+        nav.bottom-nav .nav-icon {
+            font-size: 1.5rem;
+            display: block;
+        }
+        
+        /* Header */
+        header.top-header {
+            background: var(--primary);
+            color: white;
+            padding: 1rem;
+            margin: -1rem -1rem 1rem -1rem;
+        }
+        
+        header.top-header h1 {
+            margin: 0;
+            font-size: 1.25rem;
+        }
+        
+        /* Cards */
+        .meal-card {
+            background: var(--pico-card-background-color);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            text-decoration: none;
+            color: inherit;
+            border: 1px solid var(--pico-muted-border-color);
+        }
+        
+        .meal-card:hover {
+            border-color: var(--primary);
+        }
+        
+        .meal-card.done {
+            opacity: 0.5;
+            text-decoration: line-through;
+        }
+        
+        .meal-card .toggle {
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--pico-muted-color);
+        }
+        
+        .meal-card .toggle.done {
+            color: var(--primary);
+        }
+        
+        .meal-card .title {
+            flex: 1;
+            font-weight: 500;
+        }
+        
+        /* Day sections */
+        .day-section {
+            margin-bottom: 1.5rem;
+        }
+        
+        .day-section h3 {
+            font-size: 0.875rem;
+            color: var(--pico-muted-color);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid var(--pico-muted-border-color);
+            padding-bottom: 0.25rem;
+        }
+        
+        .day-section.today h3 {
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        .day-section .empty {
+            color: var(--pico-muted-color);
+            font-style: italic;
+            font-size: 0.875rem;
+        }
+        
+        /* Recipe view */
+        .recipe-section {
+            margin-bottom: 2rem;
+        }
+        
+        .recipe-section h2 {
+            font-size: 1rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .recipe-section ol {
+            padding-left: 1.25rem;
+        }
+        
+        .recipe-section li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .ingredients-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .ingredients-list li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--pico-muted-border-color);
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .ingredients-list .amount {
+            color: var(--pico-muted-color);
+        }
+        
+        /* Recipe list */
+        .recipe-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .recipe-list li {
+            border-bottom: 1px solid var(--pico-muted-border-color);
+        }
+        
+        .recipe-list a {
+            display: block;
+            padding: 1rem 0;
+            text-decoration: none;
+        }
+        
+        /* Forms */
+        .form-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .form-row input, .form-row select {
+            margin-bottom: 0;
+        }
+        
+        /* Editor */
+        textarea.editor {
+            font-family: monospace;
+            min-height: 400px;
+        }
+        
+        /* Flash messages */
+        .flash {
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+        
+        .flash.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .flash.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        /* Buttons */
+        .btn-group {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        
+        /* Sync status */
+        .sync-status {
+            padding: 1rem;
+            background: var(--pico-card-background-color);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        
+        .sync-status.has-changes {
+            border-left: 4px solid var(--primary);
+        }
+        
+        .file-list {
+            font-family: monospace;
+            font-size: 0.875rem;
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            background: var(--pico-code-background-color);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <main class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        {% block content %}{% endblock %}
+    </main>
+    
+    <nav class="bottom-nav">
+        <a href="{{ url_for('index') }}" class="{{ 'active' if request.endpoint == 'index' else '' }}">
+            <span class="nav-icon">📅</span>
+            Viikko
+        </a>
+        <a href="{{ url_for('recipes') }}" class="{{ 'active' if request.endpoint in ['recipes', 'recipe', 'edit_recipe'] else '' }}">
+            <span class="nav-icon">📖</span>
+            Reseptit
+        </a>
+        <a href="{{ url_for('templates') }}" class="{{ 'active' if request.endpoint in ['templates', 'template_detail'] else '' }}">
+            <span class="nav-icon">📋</span>
+            Pohjat
+        </a>
+        <a href="{{ url_for('shopping') }}" class="{{ 'active' if request.endpoint == 'shopping' else '' }}">
+            <span class="nav-icon">🛒</span>
+            Ostokset
+        </a>
+    </nav>
+</body>
+</html>

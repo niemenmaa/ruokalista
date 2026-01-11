@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Viikon suunnittelu - Ruokalista{% endblock %}
+
+{% block content %}
+<header class="top-header">
+    <h1>Viikon suunnittelu</h1>
+    <small>{{ week_start.strftime('%d.%m.') }} alkaen</small>
+</header>
+
+<details>
+    <summary>Käytä pohjaa</summary>
+    <form method="post" action="{{ url_for('apply_template') }}" class="form-row">
+        <select name="template_id" style="flex: 1;">
+            <option value="">-- Valitse pohja --</option>
+            {% for template in templates %}
+            <option value="{{ template.id }}" {{ 'selected' if current_template_id == template.id else '' }}>
+                {{ template.name }}
+            </option>
+            {% endfor %}
+        </select>
+        <button type="submit">Aseta</button>
+    </form>
+    <p><small>Huom: Tämä korvaa nykyiset valinnat!</small></p>
+</details>
+
+<hr>
+
+{% for day_num in range(7) %}
+<div class="day-section">
+    <h3>{{ days[day_num] }}</h3>
+    
+    <form method="post" action="{{ url_for('set_week_meal_route') }}" class="form-row">
+        <input type="hidden" name="day" value="{{ day_num }}">
+        <select name="recipe_slug" style="flex: 1;" onchange="this.form.submit()">
+            <option value="">-- Ei ruokaa --</option>
+            {% for recipe in all_recipes %}
+            <option value="{{ recipe.slug }}" {{ 'selected' if meals_by_day[day_num] and meals_by_day[day_num].slug == recipe.slug else '' }}>
+                {{ recipe.title }}
+            </option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+{% endfor %}
+
+<div class="btn-group" style="margin-top: 1rem;">
+    <a href="{{ url_for('index') }}" role="button">Valmis</a>
+</div>
+
+{% endblock %}

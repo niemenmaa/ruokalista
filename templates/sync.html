@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Synkronoi - Ruokalista{% endblock %}
+
+{% block content %}
+<header class="top-header">
+    <h1>Git-synkronointi</h1>
+</header>
+
+<div class="sync-status {{ 'has-changes' if status.has_changes else '' }}">
+    {% if status.error %}
+        <p><strong>Virhe:</strong> {{ status.error }}</p>
+    {% elif status.has_changes %}
+        <p><strong>Muutoksia odottamassa:</strong></p>
+        <div class="file-list">
+            {% for f in status.files %}
+            {{ f }}<br>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>Kaikki synkronoitu. Ei muutoksia.</p>
+    {% endif %}
+</div>
+
+<form method="post" action="{{ url_for('do_sync') }}">
+    <button type="submit" {{ 'disabled' if not status.has_changes else '' }}>
+        Synkronoi nyt
+    </button>
+</form>
+
+<p><small>Tämä hakee uusimmat muutokset ja lähettää omat muutoksesi.</small></p>
+
+<a href="{{ url_for('recipes') }}" role="button" class="outline">Takaisin</a>
+
+{% endblock %}

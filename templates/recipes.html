@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Reseptit - Ruokalista{% endblock %}
+
+{% block content %}
+<header class="top-header">
+    <h1>Reseptit</h1>
+</header>
+
+<div class="btn-group" style="margin-bottom: 1rem;">
+    <a href="{{ url_for('new_recipe') }}" role="button">+ Uusi resepti</a>
+    <a href="{{ url_for('sync_page') }}" role="button" class="outline">Synkronoi</a>
+</div>
+
+<input type="search" id="search" placeholder="Hae reseptejä..." oninput="filterRecipes(this.value)">
+
+<ul class="recipe-list" id="recipe-list">
+    {% for recipe in recipes %}
+    <li data-title="{{ recipe.title.lower() }}">
+        <a href="{{ url_for('recipe', slug=recipe.slug) }}">
+            <strong>{{ recipe.title }}</strong>
+            <br>
+            <small>{{ recipe.ingredients|length }} raaka-ainetta</small>
+        </a>
+    </li>
+    {% endfor %}
+</ul>
+
+<script>
+function filterRecipes(query) {
+    const items = document.querySelectorAll('#recipe-list li');
+    const q = query.toLowerCase();
+    items.forEach(item => {
+        const title = item.dataset.title;
+        item.style.display = title.includes(q) ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}

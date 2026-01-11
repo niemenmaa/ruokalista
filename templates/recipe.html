@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}{{ recipe.title }} - Ruokalista{% endblock %}
+
+{% block content %}
+<header class="top-header">
+    <h1>{{ recipe.title }}</h1>
+</header>
+
+<div class="btn-group" style="margin-bottom: 1.5rem;">
+    <a href="{{ url_for('edit_recipe', slug=recipe.slug) }}" role="button" class="outline">Muokkaa</a>
+    <a href="{{ url_for('recipes') }}" role="button" class="secondary outline">Takaisin</a>
+</div>
+
+<details open>
+    <summary><strong>Raaka-aineet ({{ recipe.ingredients|length }})</strong></summary>
+    <ul class="ingredients-list">
+        {% for ing in recipe.ingredients %}
+        <li>
+            <span>{{ ing.name }}</span>
+            <span class="amount">{{ ing.amount }}</span>
+        </li>
+        {% endfor %}
+    </ul>
+</details>
+
+{% for section_name, steps in recipe.sections %}
+<div class="recipe-section">
+    <h2>{{ section_name }}</h2>
+    <ol>
+        {% for step in steps %}
+        <li>{{ step }}</li>
+        {% endfor %}
+    </ol>
+</div>
+{% endfor %}
+
+{% endblock %}

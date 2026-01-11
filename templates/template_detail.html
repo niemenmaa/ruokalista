@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}{{ template.name }} - Ruokalista{% endblock %}
+
+{% block content %}
+<header class="top-header">
+    <h1>{{ template.name }}</h1>
+</header>
+
+<div class="btn-group" style="margin-bottom: 1rem;">
+    <a href="{{ url_for('templates') }}" role="button" class="outline">Takaisin</a>
+    <form method="post" action="{{ url_for('delete_template_route', template_id=template.id) }}" style="display: inline;">
+        <button type="submit" class="secondary outline" onclick="return confirm('Poistetaanko pohja?')">Poista pohja</button>
+    </form>
+</div>
+
+{% for day_num in range(7) %}
+<div class="day-section">
+    <h3>{{ days[day_num] }}</h3>
+    
+    <form method="post" action="{{ url_for('set_template_meal_route', template_id=template.id) }}" class="form-row">
+        <input type="hidden" name="day" value="{{ day_num }}">
+        <select name="recipe_slug" style="flex: 1;" onchange="this.form.submit()">
+            <option value="">-- Ei ruokaa --</option>
+            {% for recipe in all_recipes %}
+            <option value="{{ recipe.slug }}" {{ 'selected' if meals_by_day[day_num] and meals_by_day[day_num].slug == recipe.slug else '' }}>
+                {{ recipe.title }}
+            </option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+{% endfor %}
+
+{% endblock %}

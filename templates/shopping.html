@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Ostoslista - Ruokalista{% endblock %}
+
+{% block content %}
+<header class="top-header">
+    <h1>Ostoslista</h1>
+</header>
+
+{% if meals %}
+<details>
+    <summary>Ateriat ({{ meals|length }})</summary>
+    <ul>
+        {% for meal in meals %}
+        <li>{{ meal.day }}: {{ meal.recipe.title }}</li>
+        {% endfor %}
+    </ul>
+</details>
+{% endif %}
+
+{% if ingredients %}
+<button onclick="copyList()" class="outline" style="margin-bottom: 1rem;">Kopioi lista</button>
+
+<ul class="ingredients-list" id="ingredients-list">
+    {% for ing in ingredients %}
+    <li>
+        <span>{{ ing.name }}</span>
+        <span class="amount">{{ ing.amount }}</span>
+    </li>
+    {% endfor %}
+</ul>
+
+<script>
+function copyList() {
+    const items = document.querySelectorAll('#ingredients-list li');
+    let text = '';
+    items.forEach(item => {
+        const name = item.querySelector('span').textContent;
+        const amount = item.querySelector('.amount').textContent;
+        text += amount ? `${name} (${amount})\n` : `${name}\n`;
+    });
+    navigator.clipboard.writeText(text).then(() => {
+        alert('Kopioitu leikepöydälle!');
+    });
+}
+</script>
+{% else %}
+<p><em>Ei valmistamattomia aterioita. Suunnittele ensin viikon ruuat!</em></p>
+<a href="{{ url_for('week_setup') }}" role="button">Suunnittele viikko</a>
+{% endif %}
+
+{% endblock %}

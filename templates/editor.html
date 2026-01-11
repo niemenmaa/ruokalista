@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_new %}Uusi resepti{% else %}Muokkaa: {{ slug }}{% endif %} - Ruokalista{% endblock %}
+
+{% block content %}
+<header class="top-header">
+    <h1>{% if is_new %}Uusi resepti{% else %}Muokkaa reseptiä{% endif %}</h1>
+</header>
+
+<form method="post" action="{{ url_for('new_recipe') if is_new else url_for('edit_recipe', slug=slug) }}">
+    {% if is_new %}
+    <label for="slug">
+        Tiedostonimi (ilman .cook)
+        <input type="text" id="slug" name="slug" value="{{ slug }}" placeholder="esim. kana-curry" required>
+    </label>
+    {% endif %}
+    
+    <label for="content">
+        Reseptin sisältö (Cooklang)
+        <textarea id="content" name="content" class="editor" required>{{ content }}</textarea>
+    </label>
+    
+    <details>
+        <summary>Cooklang-ohjeet</summary>
+        <table>
+            <tr><td><code>@raaka-aine{määrä}</code></td><td>Raaka-aine määrällä</td></tr>
+            <tr><td><code>@raaka-aine{}</code></td><td>Raaka-aine ilman määrää</td></tr>
+            <tr><td><code># Osio</code></td><td>Osion otsikko</td></tr>
+            <tr><td><code>>> Nimi</code></td><td>Reseptin nimi</td></tr>
+            <tr><td><code>~{15 minuuttia}</code></td><td>Aika</td></tr>
+        </table>
+    </details>
+    
+    <div class="btn-group">
+        <button type="submit">Tallenna</button>
+        <a href="{{ url_for('recipes') }}" role="button" class="secondary outline">Peruuta</a>
+    </div>
+</form>
+{% endblock %}
