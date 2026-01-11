@@ -1,0 +1,3 @@
+[submodule "reseptit"]
+	path = reseptit
+	url = git@github.com:niemenmaa/reseptit.git
