@@ -182,9 +182,83 @@
             gap: 0.5rem;
             margin-bottom: 1rem;
         }
-        
+
         .form-row input, .form-row select {
             margin-bottom: 0;
+        }
+
+        /* Meal rows for week setup */
+        .meal-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .meal-row select {
+            margin-bottom: 0;
+        }
+
+        .meal-row .recipe-select {
+            flex: 2;
+            min-width: 150px;
+        }
+
+        .meal-row .date-select,
+        .meal-row .chef-select {
+            flex: 1;
+            min-width: 100px;
+        }
+
+        .meal-row.empty {
+            opacity: 0.7;
+        }
+
+        .meal-row button.small {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        /* Meal info in week view */
+        .meal-info {
+            flex: 1;
+        }
+
+        .meal-meta {
+            font-size: 0.8rem;
+            color: var(--pico-muted-color);
+            margin-top: 0.25rem;
+        }
+
+        .meal-meta .date {
+            margin-right: 0.5rem;
+        }
+
+        .meal-meta .muted {
+            font-style: italic;
+        }
+
+        .meal-meta .chef {
+            background: var(--pico-secondary-background);
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+
+        .meal-card.today {
+            border-color: var(--primary);
+            border-width: 2px;
+        }
+
+        /* Template meals */
+        .template-meals .meal-row {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--pico-muted-border-color);
+        }
+
+        .template-meals .recipe-name {
+            flex: 1;
         }
         
         /* Editor */
@@ -256,6 +330,10 @@
         <a href="{{ url_for('index') }}" class="{{ 'active' if request.endpoint == 'index' else '' }}">
             <span class="nav-icon">📅</span>
             Viikko
+        </a>
+        <a href="{{ url_for('weeks') }}" class="{{ 'active' if request.endpoint == 'weeks' else '' }}">
+            <span class="nav-icon">📆</span>
+            Viikot
         </a>
         <a href="{{ url_for('recipes') }}" class="{{ 'active' if request.endpoint in ['recipes', 'recipe', 'edit_recipe'] else '' }}">
             <span class="nav-icon">📖</span>
