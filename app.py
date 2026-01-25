@@ -270,8 +270,19 @@ def rename_template_route(template_id):
 @app.route('/week/setup')
 def week_setup():
     """Setup this week's meals."""
+    # Get week_start from query param or default to current week
+    start_param = request.args.get('start')
+    if start_param:
+        try:
+            week_start = date.fromisoformat(start_param)
+            # Normalize to Monday
+            week_start = week_start - timedelta(days=week_start.weekday())
+        except ValueError:
+            week_start = get_week_start()
+    else:
+        week_start = get_week_start()
+
     all_templates = get_all_templates()
-    week_start = get_week_start()
     week = get_or_create_active_week(week_start)
     current_meals = get_week_meals(week_start)
     recipes = get_recipes_dict()
@@ -296,6 +307,11 @@ def week_setup():
     # Format week dates for dropdown
     date_options = [{'date': d, 'iso': d.isoformat(), 'label': format_date_fi(d)} for d in week_dates]
 
+    # Calculate prev/next week dates
+    prev_week = week_start - timedelta(days=7)
+    next_week = week_start + timedelta(days=7)
+    current_week_start = get_week_start()
+
     return render_template('week_setup.html',
         templates=all_templates,
         meals=meals,
@@ -304,7 +320,10 @@ def week_setup():
         week_start=week_start,
         current_template_id=week.get('template_id'),
         date_options=date_options,
-        chefs=CHEFS
+        chefs=CHEFS,
+        prev_week=prev_week,
+        next_week=next_week,
+        is_current_week=(week_start == current_week_start)
     )
 
 
