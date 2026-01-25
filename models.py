@@ -239,6 +239,15 @@ def get_or_create_active_week(week_start: date = None) -> dict:
         }
 
 
+def get_all_weeks() -> list:
+    """Get all weeks, sorted by week_start descending."""
+    with get_db() as conn:
+        rows = conn.execute(
+            'SELECT * FROM active_week ORDER BY week_start DESC'
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+
 def apply_template_to_week(template_id: int, week_start: date = None):
     """Copy meals from template to active week (without dates/chefs)."""
     if week_start is None:
