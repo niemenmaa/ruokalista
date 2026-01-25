@@ -4,8 +4,14 @@
 
 {% block content %}
 <header class="top-header">
-    <h1>Viikon suunnittelu</h1>
-    <small>{{ week_start.strftime('%d.%m.') }} alkaen</small>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <a href="{{ url_for('week_setup', start=prev_week.isoformat()) }}" style="color: white; text-decoration: none; padding: 0.5rem;">← Edellinen</a>
+        <div style="text-align: center;">
+            <h1 style="margin: 0;">Viikon suunnittelu</h1>
+            <small>{{ week_start.strftime('%d.%m.') }} alkaen{% if is_current_week %} (tämä viikko){% endif %}</small>
+        </div>
+        <a href="{{ url_for('week_setup', start=next_week.isoformat()) }}" style="color: white; text-decoration: none; padding: 0.5rem;">Seuraava →</a>
+    </div>
 </header>
 
 <details>
@@ -26,26 +32,94 @@
 
 <hr>
 
-{% for day_num in range(7) %}
-<div class="day-section">
-    <h3>{{ days[day_num] }}</h3>
-    
-    <form method="post" action="{{ url_for('set_week_meal_route') }}" class="form-row">
-        <input type="hidden" name="day" value="{{ day_num }}">
-        <select name="recipe_slug" style="flex: 1;" onchange="this.form.submit()">
-            <option value="">-- Ei ruokaa --</option>
-            {% for recipe in all_recipes %}
-            <option value="{{ recipe.slug }}" {{ 'selected' if meals_by_day[day_num] and meals_by_day[day_num].slug == recipe.slug else '' }}>
-                {{ recipe.title }}
-            </option>
-            {% endfor %}
-        </select>
-    </form>
-</div>
+<h3>Ruuat</h3>
+
+{% for meal in meals %}
+<form method="post" action="{{ url_for('update_week_meal_route', meal_id=meal.id) }}" class="meal-row">
+    <select name="recipe_slug" class="recipe-select">
+        <option value="">-- Poista --</option>
+        {% for recipe in all_recipes %}
+        <option value="{{ recipe.slug }}" {{ 'selected' if meal.slug == recipe.slug else '' }}>
+            {{ recipe.title }}
+        </option>
+        {% endfor %}
+    </select>
+    <select name="meal_date" class="date-select">
+        <option value="">Ei pvm</option>
+        {% for opt in date_options %}
+        <option value="{{ opt.iso }}" {{ 'selected' if meal.meal_date_iso == opt.iso else '' }}>
+            {{ opt.label }}
+        </option>
+        {% endfor %}
+    </select>
+    {% if chefs %}
+    <select name="chef" class="chef-select">
+        <option value="">Ei kokkia</option>
+        {% for chef in chefs %}
+        <option value="{{ chef }}" {{ 'selected' if meal.chef == chef else '' }}>
+            {{ chef }}
+        </option>
+        {% endfor %}
+    </select>
+    {% endif %}
+    <button type="submit" class="small">Tallenna</button>
+</form>
 {% endfor %}
 
+{% for i in range(empty_slots) %}
+<form method="post" action="{{ url_for('add_week_meal_route') }}" class="meal-row empty">
+    <input type="hidden" name="week_start" value="{{ week_start.isoformat() }}">
+    <select name="recipe_slug" class="recipe-select">
+        <option value="">-- Valitse ruoka --</option>
+        {% for recipe in all_recipes %}
+        <option value="{{ recipe.slug }}">{{ recipe.title }}</option>
+        {% endfor %}
+    </select>
+    <select name="meal_date" class="date-select">
+        <option value="">Ei pvm</option>
+        {% for opt in date_options %}
+        <option value="{{ opt.iso }}">{{ opt.label }}</option>
+        {% endfor %}
+    </select>
+    {% if chefs %}
+    <select name="chef" class="chef-select">
+        <option value="">Ei kokkia</option>
+        {% for chef in chefs %}
+        <option value="{{ chef }}">{{ chef }}</option>
+        {% endfor %}
+    </select>
+    {% endif %}
+    <button type="submit" class="small">Lisää</button>
+</form>
+{% endfor %}
+
+<form method="post" action="{{ url_for('add_week_meal_route') }}" class="meal-row add-more">
+    <input type="hidden" name="week_start" value="{{ week_start.isoformat() }}">
+    <select name="recipe_slug" class="recipe-select">
+        <option value="">-- Lisää ruoka --</option>
+        {% for recipe in all_recipes %}
+        <option value="{{ recipe.slug }}">{{ recipe.title }}</option>
+        {% endfor %}
+    </select>
+    <select name="meal_date" class="date-select">
+        <option value="">Ei pvm</option>
+        {% for opt in date_options %}
+        <option value="{{ opt.iso }}">{{ opt.label }}</option>
+        {% endfor %}
+    </select>
+    {% if chefs %}
+    <select name="chef" class="chef-select">
+        <option value="">Ei kokkia</option>
+        {% for chef in chefs %}
+        <option value="{{ chef }}">{{ chef }}</option>
+        {% endfor %}
+    </select>
+    {% endif %}
+    <button type="submit" class="small">Lisää</button>
+</form>
+
 <div class="btn-group" style="margin-top: 1rem;">
-    <a href="{{ url_for('index') }}" role="button">Valmis</a>
+    <a href="{{ url_for('index', start=week_start.isoformat()) }}" role="button">Valmis</a>
 </div>
 
 {% endblock %}
