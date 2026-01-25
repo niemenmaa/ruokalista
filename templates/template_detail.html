@@ -4,32 +4,49 @@
 
 {% block content %}
 <header class="top-header">
-    <h1>{{ template.name }}</h1>
+    <form method="post" action="{{ url_for('rename_template_route', template_id=template.id) }}" style="display: flex; align-items: center; gap: 0.5rem;">
+        <input type="text" name="name" value="{{ template.name }}"
+               style="font-size: 1.25rem; font-weight: bold; background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.3); color: white; padding: 0; margin: 0; flex: 1;"
+               required>
+        <button type="submit" style="background: rgba(255,255,255,0.2); border: none; padding: 0.25rem 0.5rem; font-size: 0.75rem; margin: 0;">Tallenna</button>
+    </form>
 </header>
 
-<div class="btn-group" style="margin-bottom: 1rem;">
-    <a href="{{ url_for('templates') }}" role="button" class="outline">Takaisin</a>
-    <form method="post" action="{{ url_for('delete_template_route', template_id=template.id) }}" style="display: inline;">
-        <button type="submit" class="secondary outline" onclick="return confirm('Poistetaanko pohja?')">Poista pohja</button>
+<div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+    <a href="{{ url_for('templates') }}" role="button" class="outline" style="margin: 0; padding: 0.75rem 1rem;">Takaisin</a>
+    <form method="post" action="{{ url_for('delete_template_route', template_id=template.id) }}" style="margin: 0;">
+        <button type="submit" class="outline" style="margin: 0; padding: 0.75rem 1rem;" onclick="return confirm('Poistetaanko pohja?')">Poista pohja</button>
     </form>
 </div>
 
-{% for day_num in range(7) %}
-<div class="day-section">
-    <h3>{{ days[day_num] }}</h3>
-    
-    <form method="post" action="{{ url_for('set_template_meal_route', template_id=template.id) }}" class="form-row">
-        <input type="hidden" name="day" value="{{ day_num }}">
-        <select name="recipe_slug" style="flex: 1;" onchange="this.form.submit()">
-            <option value="">-- Ei ruokaa --</option>
-            {% for recipe in all_recipes %}
-            <option value="{{ recipe.slug }}" {{ 'selected' if meals_by_day[day_num] and meals_by_day[day_num].slug == recipe.slug else '' }}>
-                {{ recipe.title }}
-            </option>
-            {% endfor %}
-        </select>
-    </form>
+<h3>Ruuat pohjassa</h3>
+
+{% if meals %}
+<div class="template-meals">
+    {% for meal in meals %}
+    <div class="meal-card" style="justify-content: space-between;">
+        <span class="title">{{ meal.recipe.title if meal.recipe else meal.slug }}</span>
+        <form method="post" action="{{ url_for('remove_template_meal_route', template_id=template.id, meal_id=meal.id) }}" style="margin: 0;">
+            <button type="submit" class="outline" style="margin: 0; padding: 0.5rem 1rem;">Poista</button>
+        </form>
+    </div>
+    {% endfor %}
 </div>
-{% endfor %}
+{% else %}
+<p class="empty">Ei ruokia pohjassa.</p>
+{% endif %}
+
+<hr>
+
+<h3>Lisää ruoka</h3>
+<form method="post" action="{{ url_for('add_template_meal_route', template_id=template.id) }}" class="form-row" style="align-items: stretch;">
+    <select name="recipe_slug" style="flex: 1; min-width: 400px; margin: 0;">
+        <option value="">-- Valitse ruoka --</option>
+        {% for recipe in all_recipes %}
+        <option value="{{ recipe.slug }}">{{ recipe.title }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit" style="white-space: nowrap; margin: 0;">Lisää</button>
+</form>
 
 {% endblock %}
