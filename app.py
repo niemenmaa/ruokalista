@@ -42,7 +42,18 @@ def format_date_fi(d: date) -> str:
 @app.route('/')
 def index():
     """Home page - this week's meals."""
-    week_start = get_week_start()
+    # Get week_start from query param or default to current week
+    start_param = request.args.get('start')
+    if start_param:
+        try:
+            week_start = date.fromisoformat(start_param)
+            # Normalize to Monday
+            week_start = week_start - timedelta(days=week_start.weekday())
+        except ValueError:
+            week_start = get_week_start()
+    else:
+        week_start = get_week_start()
+
     week_meals = get_week_meals(week_start)
     recipes = get_recipes_dict()
     today = date.today()
@@ -62,10 +73,18 @@ def index():
             'is_today': meal_date == today if meal_date else False
         })
 
+    # Calculate prev/next week dates
+    prev_week = week_start - timedelta(days=7)
+    next_week = week_start + timedelta(days=7)
+    current_week_start = get_week_start()
+
     return render_template('week.html',
         meals=meals,
         week_start=week_start,
-        week_end=week_start + timedelta(days=6)
+        week_end=week_start + timedelta(days=6),
+        prev_week=prev_week,
+        next_week=next_week,
+        is_current_week=(week_start == current_week_start)
     )
 
 
