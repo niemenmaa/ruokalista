@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Viikot - Ruokalista{% endblock %}
+
+{% block content %}
+<header class="top-header">
+    <h1>Viikot</h1>
+</header>
+
+<form method="post" action="{{ url_for('new_week') }}" class="form-row" style="align-items: stretch; margin-bottom: 1.5rem;">
+    <input type="date" name="week_start" required style="flex: 1; margin: 0;">
+    <button type="submit" style="white-space: nowrap; margin: 0;">Luo uusi viikko</button>
+</form>
+
+{% if weeks %}
+<div class="week-list">
+    {% for week in weeks %}
+    <a href="{{ url_for('index', start=week.week_start.isoformat()) }}" class="meal-card" style="justify-content: space-between;">
+        <div>
+            <strong>{{ week.week_start.strftime('%d.%m.') }} - {{ week.week_end.strftime('%d.%m.%Y') }}</strong>
+            {% if week.is_current %}
+                <span style="background: var(--primary); color: white; padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.75rem; margin-left: 0.5rem;">tämä viikko</span>
+            {% elif week.is_future %}
+                <span style="background: var(--pico-secondary-background); padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.75rem; margin-left: 0.5rem;">tuleva</span>
+            {% endif %}
+        </div>
+        <span style="color: var(--pico-muted-color);">→</span>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<p class="empty">Ei vielä viikkoja. Luo ensimmäinen yllä tai <a href="{{ url_for('index') }}">siirry tälle viikolle</a>.</p>
+{% endif %}
+
+{% endblock %}
