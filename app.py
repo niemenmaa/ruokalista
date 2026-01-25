@@ -11,7 +11,8 @@ from models import (
     get_week_start, get_week_dates, get_all_templates, get_template, create_template,
     delete_template, update_template_name, get_template_meals, add_template_meal, remove_template_meal,
     get_or_create_active_week, apply_template_to_week, get_week_meals,
-    add_week_meal, update_week_meal, remove_week_meal, toggle_meal_done, get_undone_meals
+    add_week_meal, update_week_meal, remove_week_meal, toggle_meal_done, get_undone_meals,
+    get_all_weeks
 )
 from git_sync import sync, get_status
 
@@ -390,6 +391,52 @@ def remove_week_meal_route(meal_id):
     """Remove a meal from the current week."""
     remove_week_meal(meal_id)
     return redirect(url_for('week_setup'))
+
+
+# ============ Weeks History ============
+
+@app.route('/weeks')
+def weeks():
+    """View all weeks history."""
+    all_weeks = get_all_weeks()
+    current_week_start = get_week_start()
+
+    weeks_list = []
+    for week in all_weeks:
+        week_start = date.fromisoformat(week['week_start'])
+        week_end = week_start + timedelta(days=6)
+        weeks_list.append({
+            'id': week['id'],
+            'week_start': week_start,
+            'week_end': week_end,
+            'is_current': week_start == current_week_start,
+            'is_future': week_start > current_week_start
+        })
+
+    return render_template('weeks.html',
+        weeks=weeks_list,
+        current_week_start=current_week_start
+    )
+
+
+@app.route('/weeks/new', methods=['POST'])
+def new_week():
+    """Create a new week."""
+    week_start_str = request.form.get('week_start')
+    if not week_start_str:
+        flash('Valitse päivämäärä', 'error')
+        return redirect(url_for('weeks'))
+
+    try:
+        week_start = date.fromisoformat(week_start_str)
+        # Normalize to Monday
+        week_start = week_start - timedelta(days=week_start.weekday())
+    except ValueError:
+        flash('Virheellinen päivämäärä', 'error')
+        return redirect(url_for('weeks'))
+
+    get_or_create_active_week(week_start)
+    return redirect(url_for('week_setup', start=week_start.isoformat()))
 
 
 # ============ Shopping List ============
