@@ -337,18 +337,28 @@ def apply_template():
     return redirect(url_for('week_setup'))
 
 
-@app.route('/week/add-meal', methods=['POST'])
+@app.route('/week/meal/add', methods=['POST'])
 def add_week_meal_route():
-    """Add a meal to the current week."""
-    recipe_slug = request.form.get('recipe_slug', '')
-    meal_date_str = request.form.get('meal_date', '')
-    chef = request.form.get('chef', '')
+    """Add a meal to the week."""
+    recipe_slug = request.form.get('recipe_slug')
+    if not recipe_slug:
+        return redirect(request.referrer or url_for('week_setup'))
 
-    if recipe_slug:
-        meal_date = date.fromisoformat(meal_date_str) if meal_date_str else None
-        add_week_meal(recipe_slug, meal_date, chef if chef else None)
+    meal_date = request.form.get('meal_date') or None
+    chef = request.form.get('chef') or None
 
-    return redirect(url_for('week_setup'))
+    # Get week_start from form or default
+    week_start_str = request.form.get('week_start')
+    if week_start_str:
+        try:
+            week_start = date.fromisoformat(week_start_str)
+        except ValueError:
+            week_start = get_week_start()
+    else:
+        week_start = get_week_start()
+
+    add_week_meal(recipe_slug, meal_date, chef, week_start)
+    return redirect(url_for('week_setup', start=week_start.isoformat()))
 
 
 @app.route('/week/update-meal/<int:meal_id>', methods=['POST'])
