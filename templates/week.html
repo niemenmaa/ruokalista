@@ -16,6 +16,7 @@
 
 <div class="btn-group" style="margin-bottom: 1rem;">
     <a href="{{ url_for('week_setup', start=week_start.isoformat()) }}" role="button" class="outline">Muokkaa viikkoa</a>
+    <a href="{{ url_for('week_ics', start=week_start.isoformat()) }}" role="button" class="outline">Lataa kalenteri</a>
 </div>
 
 {% if meals %}

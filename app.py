@@ -2,7 +2,7 @@
 Ruokalista - Simple Cooklang recipe manager with meal planning.
 """
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, Response
 from pathlib import Path
 from datetime import date, timedelta
 
@@ -86,6 +86,82 @@ def index():
         prev_week=prev_week,
         next_week=next_week,
         is_current_week=(week_start == current_week_start)
+    )
+
+
+@app.route('/week.ics')
+def week_ics():
+    """Download ICS calendar file for the week's meals."""
+    from datetime import datetime
+    import hashlib
+
+    # Get week_start from query param or default to current week
+    start_param = request.args.get('start')
+    if start_param:
+        try:
+            week_start = date.fromisoformat(start_param)
+            week_start = week_start - timedelta(days=week_start.weekday())
+        except ValueError:
+            week_start = get_week_start()
+    else:
+        week_start = get_week_start()
+
+    week_meals = get_week_meals(week_start)
+    recipes = get_recipes_dict()
+
+    # Build ICS content
+    lines = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//Ruokalista//Meal Planning//FI',
+        'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH',
+    ]
+
+    for meal in week_meals:
+        if not meal['meal_date']:
+            continue  # Skip meals without a date
+
+        recipe = recipes.get(meal['recipe_slug'])
+        meal_date = date.fromisoformat(meal['meal_date'])
+
+        # Build event title
+        title = recipe.title if recipe else meal['recipe_slug']
+        if meal['chef']:
+            title = f"{title} ({meal['chef']})"
+
+        # Build recipe URL
+        recipe_url = url_for('recipe', slug=meal['recipe_slug'], _external=True)
+
+        # Generate unique ID for the event
+        uid_source = f"{meal['id']}-{meal['meal_date']}-{meal['recipe_slug']}"
+        uid = hashlib.md5(uid_source.encode()).hexdigest()
+
+        # Format date for all-day event (YYYYMMDD)
+        date_str = meal_date.strftime('%Y%m%d')
+
+        # Timestamp for DTSTAMP
+        now = datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
+
+        lines.extend([
+            'BEGIN:VEVENT',
+            f'UID:{uid}@ruokalista',
+            f'DTSTAMP:{now}',
+            f'DTSTART;VALUE=DATE:{date_str}',
+            f'SUMMARY:{title}',
+            f'DESCRIPTION:{recipe_url}',
+            'END:VEVENT',
+        ])
+
+    lines.append('END:VCALENDAR')
+
+    ics_content = '\r\n'.join(lines)
+    filename = f'ruokalista-{week_start.isoformat()}.ics'
+
+    return Response(
+        ics_content,
+        mimetype='text/calendar',
+        headers={'Content-Disposition': f'attachment; filename="{filename}"'}
     )
 
 

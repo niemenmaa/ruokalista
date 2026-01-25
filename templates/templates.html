@@ -9,10 +9,9 @@
 
 <p>Luo viikkopohjia, joita voit käyttää nopeasti viikon ruokien suunnitteluun.</p>
 
-<form method="post" action="{{ url_for('new_template') }}" class="form-row">
-    <input type="text" name="name" placeholder="Uuden pohjan nimi" required style="flex: 1;">
-    <input type="number" name="meal_count" value="7" min="1" max="14" style="width: 8rem;" title="Ruokien määrä">
-    <button type="submit">Luo pohja</button>
+<form method="post" action="{{ url_for('new_template') }}" class="form-row" style="align-items: stretch;">
+    <input type="text" name="name" placeholder="Uuden pohjan nimi" required style="flex: 1; min-width: 400px; margin: 0;">
+    <button type="submit" style="white-space: nowrap; margin: 0;">Luo pohja</button>
 </form>
 
 {% if templates %}

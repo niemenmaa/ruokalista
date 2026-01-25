@@ -12,7 +12,7 @@
     <summary>Ateriat ({{ meals|length }})</summary>
     <ul>
         {% for meal in meals %}
-        <li>{{ meal.day }}: {{ meal.recipe.title }}</li>
+        <li>{{ meal.date_fi }}{% if meal.chef %} ({{ meal.chef }}){% endif %}: {{ meal.recipe.title }}</li>
         {% endfor %}
     </ul>
 </details>
