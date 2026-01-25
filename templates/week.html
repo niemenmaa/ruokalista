@@ -4,37 +4,51 @@
 
 {% block content %}
 <header class="top-header">
-    <h1>Tämän viikon ruuat</h1>
-    <small>{{ week_start.strftime('%d.%m.') }} - {{ week_end.strftime('%d.%m.%Y') }}</small>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <a href="{{ url_for('index', start=prev_week.isoformat()) }}" style="color: white; text-decoration: none; padding: 0.5rem;">← Edellinen</a>
+        <div style="text-align: center;">
+            <h1 style="margin: 0;">{% if is_current_week %}Tämän viikon ruuat{% else %}Viikon ruuat{% endif %}</h1>
+            <small>{{ week_start.strftime('%d.%m.') }} - {{ week_end.strftime('%d.%m.%Y') }}</small>
+        </div>
+        <a href="{{ url_for('index', start=next_week.isoformat()) }}" style="color: white; text-decoration: none; padding: 0.5rem;">Seuraava →</a>
+    </div>
 </header>
 
 <div class="btn-group" style="margin-bottom: 1rem;">
-    <a href="{{ url_for('week_setup') }}" role="button" class="outline">Muokkaa viikkoa</a>
+    <a href="{{ url_for('week_setup', start=week_start.isoformat()) }}" role="button" class="outline">Muokkaa viikkoa</a>
 </div>
 
-{% for day_num in range(7) %}
-<div class="day-section {{ 'today' if day_num == today else '' }}">
-    <h3>{{ days[day_num] }}{% if day_num == today %} (tänään){% endif %}</h3>
-    
-    {% if meals_by_day[day_num] %}
-        {% for meal in meals_by_day[day_num] %}
-        <div class="meal-card {{ 'done' if meal.is_done else '' }}">
-            <span 
-                class="toggle {{ 'done' if meal.is_done else '' }}"
-                hx-post="{{ url_for('toggle_meal', meal_id=meal.id) }}"
-                hx-swap="innerHTML"
-            >
-                {{ '✓' if meal.is_done else '○' }}
-            </span>
+{% if meals %}
+<div class="meal-list">
+    {% for meal in meals %}
+    <div class="meal-card {{ 'done' if meal.is_done else '' }} {{ 'today' if meal.is_today else '' }}">
+        <span
+            class="toggle {{ 'done' if meal.is_done else '' }}"
+            hx-post="{{ url_for('toggle_meal', meal_id=meal.id) }}"
+            hx-swap="outerHTML"
+        >
+            {{ '✓' if meal.is_done else '○' }}
+        </span>
+        <div class="meal-info">
             <a href="{{ url_for('recipe', slug=meal.slug) }}" class="title">
                 {{ meal.recipe.title if meal.recipe else meal.slug }}
             </a>
+            <div class="meal-meta">
+                {% if meal.meal_date_fi %}
+                    <span class="date">{{ meal.meal_date_fi }}</span>
+                {% else %}
+                    <span class="date muted">Ei päivämäärää</span>
+                {% endif %}
+                {% if meal.chef %}
+                    <span class="chef">{{ meal.chef }}</span>
+                {% endif %}
+            </div>
         </div>
-        {% endfor %}
-    {% else %}
-        <p class="empty">Ei ruokaa suunniteltuna</p>
-    {% endif %}
+    </div>
+    {% endfor %}
 </div>
-{% endfor %}
+{% else %}
+<p class="empty">Ei ruokia suunniteltuna. <a href="{{ url_for('week_setup') }}">Lisää ruokia</a></p>
+{% endif %}
 
 {% endblock %}
