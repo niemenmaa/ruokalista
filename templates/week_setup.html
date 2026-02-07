@@ -17,6 +17,7 @@
 <details>
     <summary>Käytä pohjaa</summary>
     <form method="post" action="{{ url_for('apply_template') }}" class="form-row">
+        <input type="hidden" name="week_start" value="{{ week_start.isoformat() }}">
         <select name="template_id" style="flex: 1;">
             <option value="">-- Valitse pohja --</option>
             {% for template in templates %}
@@ -36,6 +37,7 @@
 
 {% for meal in meals %}
 <form method="post" action="{{ url_for('update_week_meal_route', meal_id=meal.id) }}" class="meal-row">
+    <input type="hidden" name="week_start" value="{{ week_start.isoformat() }}">
     <select name="recipe_slug" class="recipe-select">
         <option value="">-- Poista --</option>
         {% for recipe in all_recipes %}

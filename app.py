@@ -381,8 +381,14 @@ def week_setup():
     # Ensure we have at least MEAL_SLOTS entries for display
     empty_slots = max(0, MEAL_SLOTS - len(meals))
 
-    # Format week dates for dropdown
-    date_options = [{'date': d, 'iso': d.isoformat(), 'label': format_date_fi(d)} for d in week_dates]
+    # Format week dates for dropdown (include previous weekend as prep days)
+    prev_saturday = week_start - timedelta(days=2)
+    prev_sunday = week_start - timedelta(days=1)
+    prep_dates = [
+        {'date': d, 'iso': d.isoformat(), 'label': format_date_fi(d) + ' (esivalmistelu)'}
+        for d in [prev_saturday, prev_sunday]
+    ]
+    date_options = prep_dates + [{'date': d, 'iso': d.isoformat(), 'label': format_date_fi(d)} for d in week_dates]
 
     # Calculate prev/next week dates
     prev_week = week_start - timedelta(days=7)
@@ -408,10 +414,20 @@ def week_setup():
 def apply_template():
     """Apply a template to this week."""
     template_id = int(request.form.get('template_id', 0))
+
+    week_start_str = request.form.get('week_start')
+    if week_start_str:
+        try:
+            week_start = date.fromisoformat(week_start_str)
+        except ValueError:
+            week_start = get_week_start()
+    else:
+        week_start = get_week_start()
+
     if template_id:
-        apply_template_to_week(template_id)
+        apply_template_to_week(template_id, week_start)
         flash('Pohja asetettu viikolle', 'success')
-    return redirect(url_for('week_setup'))
+    return redirect(url_for('week_setup', start=week_start.isoformat()))
 
 
 @app.route('/week/meal/add', methods=['POST'])
@@ -445,6 +461,15 @@ def update_week_meal_route(meal_id):
     meal_date_str = request.form.get('meal_date', '')
     chef = request.form.get('chef', '')
 
+    week_start_str = request.form.get('week_start')
+    if week_start_str:
+        try:
+            week_start = date.fromisoformat(week_start_str)
+        except ValueError:
+            week_start = get_week_start()
+    else:
+        week_start = get_week_start()
+
     if not recipe_slug:
         # Empty recipe means remove
         remove_week_meal(meal_id)
@@ -459,14 +484,23 @@ def update_week_meal_route(meal_id):
             clear_chef=not chef
         )
 
-    return redirect(url_for('week_setup'))
+    return redirect(url_for('week_setup', start=week_start.isoformat()))
 
 
 @app.route('/week/remove-meal/<int:meal_id>', methods=['POST'])
 def remove_week_meal_route(meal_id):
     """Remove a meal from the current week."""
+    week_start_str = request.form.get('week_start')
+    if week_start_str:
+        try:
+            week_start = date.fromisoformat(week_start_str)
+        except ValueError:
+            week_start = get_week_start()
+    else:
+        week_start = get_week_start()
+
     remove_week_meal(meal_id)
-    return redirect(url_for('week_setup'))
+    return redirect(url_for('week_setup', start=week_start.isoformat()))
 
 
 # ============ Weeks History ============
