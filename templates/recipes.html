@@ -20,7 +20,7 @@
         <a href="{{ url_for('recipe', slug=recipe.slug) }}">
             <strong>{{ recipe.title }}</strong>
             <br>
-            <small>{{ recipe.ingredients|length }} raaka-ainetta</small>
+            <small>{{ all_ingredients(recipe)|length }} raaka-ainetta</small>
         </a>
     </li>
     {% endfor %}

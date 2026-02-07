@@ -129,35 +129,114 @@
         .recipe-section {
             margin-bottom: 2rem;
         }
-        
+
         .recipe-section h2 {
-            font-size: 1rem;
+            font-size: 1.1rem;
             color: var(--primary);
-            margin-bottom: 0.5rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--primary);
         }
-        
-        .recipe-section ol {
-            padding-left: 1.25rem;
+
+        .ingredients-header {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
         }
-        
-        .recipe-section li {
-            margin-bottom: 0.5rem;
-        }
-        
+
         .ingredients-list {
             list-style: none;
             padding: 0;
+            margin-bottom: 2rem;
         }
-        
+
         .ingredients-list li {
-            padding: 0.5rem 0;
+            padding: 0.6rem 0;
             border-bottom: 1px solid var(--pico-muted-border-color);
             display: flex;
             justify-content: space-between;
+            align-items: baseline;
         }
-        
+
+        .ingredients-list li:last-child {
+            border-bottom: none;
+        }
+
         .ingredients-list .amount {
             color: var(--pico-muted-color);
+            white-space: nowrap;
+            margin-left: 1rem;
+        }
+
+        /* Phases / steps */
+        .phases-header {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .phase-list {
+            list-style: none;
+            padding: 0;
+            counter-reset: step-counter;
+        }
+
+        .phase-item {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            align-items: flex-start;
+        }
+
+        .phase-number {
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-top: 2px;
+        }
+
+        .phase-content {
+            flex: 1;
+        }
+
+        .phase-description {
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 0.25rem;
+        }
+
+        .phase-time {
+            display: inline-block;
+            font-size: 0.85rem;
+            color: var(--primary);
+            font-weight: 500;
+            margin-top: 0.25rem;
+        }
+
+        .phase-ingredients-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 0.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+
+        .phase-ingredients-list li {
+            background: #fdf0ec;
+            color: #7a3e2d;
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            white-space: nowrap;
         }
         
         /* Recipe list */
@@ -265,6 +344,109 @@
         textarea.editor {
             font-family: monospace;
             min-height: 400px;
+        }
+
+        .editor-section {
+            border: 1px solid var(--pico-muted-border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .editor-section h4 {
+            font-size: 0.9rem;
+            margin: 0.75rem 0 0.25rem;
+        }
+
+        .section-header {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .section-header input {
+            margin-bottom: 0;
+            font-weight: 600;
+        }
+
+        .ingredient-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            align-items: center;
+        }
+
+        .ingredient-row .ing-name {
+            flex: 2;
+        }
+
+        .ingredient-row .ing-amount,
+        .ingredient-row .ing-unit {
+            flex: 1;
+        }
+
+        .ingredient-row input,
+        .phase-row input {
+            margin-bottom: 0;
+        }
+
+        .phase-row {
+            border: 1px solid var(--pico-muted-border-color);
+            border-radius: 6px;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .phase-header {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .phase-header input {
+            flex: 1;
+        }
+
+        .phase-ingredients {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem 1rem;
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .phase-ing-check {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            margin-bottom: 0;
+        }
+
+        .phase-ing-check input[type="checkbox"] {
+            margin: 0;
+        }
+
+        .remove-btn {
+            background: none;
+            border: 1px solid #dc3545;
+            color: #dc3545;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            line-height: 1;
+            padding: 0.25rem 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .remove-btn:hover {
+            background: #dc3545;
+            color: white;
+        }
+
+        .small-btn {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+            margin-bottom: 0.75rem;
         }
         
         /* Flash messages */

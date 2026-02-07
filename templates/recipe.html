@@ -12,27 +12,79 @@
     <a href="{{ url_for('recipes') }}" role="button" class="secondary outline">Takaisin</a>
 </div>
 
-<details open>
-    <summary><strong>Raaka-aineet ({{ recipe.ingredients|length }})</strong></summary>
+{% if recipe.sections %}
+{# Grouped recipe with sections #}
+{% for section in recipe.sections %}
+<div class="recipe-section">
+    <h2>{{ section.title }}</h2>
+
+    <p class="ingredients-header">Raaka-aineet</p>
     <ul class="ingredients-list">
-        {% for ing in recipe.ingredients %}
+        {% for ing in section.ingredients %}
         <li>
             <span>{{ ing.name }}</span>
-            <span class="amount">{{ ing.amount }}</span>
+            {% if ing.amount %}<span class="amount">{{ ing.amount|format_amount }}</span>{% endif %}
         </li>
         {% endfor %}
     </ul>
-</details>
 
-{% for section_name, steps in recipe.sections %}
-<div class="recipe-section">
-    <h2>{{ section_name }}</h2>
-    <ol>
-        {% for step in steps %}
-        <li>{{ step }}</li>
+    {% if section.phases %}
+    <p class="phases-header">Valmistus</p>
+    <ol class="phase-list">
+        {% for phase in section.phases %}
+        <li class="phase-item">
+            <span class="phase-number">{{ loop.index }}</span>
+            <div class="phase-content">
+                <div class="phase-description">{{ phase.description }}</div>
+                {% if phase.time %}<span class="phase-time">{{ phase.time|join(' ') }}</span>{% endif %}
+                {% if phase.ingredients %}
+                <ul class="phase-ingredients-list">
+                    {% for idx in phase.ingredients %}
+                    <li>{{ section.ingredients[idx].name }}{% if section.ingredients[idx].amount %} {{ section.ingredients[idx].amount|format_amount }}{% endif %}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+        </li>
         {% endfor %}
     </ol>
+    {% endif %}
 </div>
 {% endfor %}
+
+{% else %}
+{# Simple recipe with flat ingredients + phases #}
+<p class="ingredients-header">Raaka-aineet</p>
+<ul class="ingredients-list">
+    {% for ing in recipe.ingredients %}
+    <li>
+        <span>{{ ing.name }}</span>
+        {% if ing.amount %}<span class="amount">{{ ing.amount|format_amount }}</span>{% endif %}
+    </li>
+    {% endfor %}
+</ul>
+
+{% if recipe.phases %}
+<p class="phases-header">Valmistus</p>
+<ol class="phase-list">
+    {% for phase in recipe.phases %}
+    <li class="phase-item">
+        <span class="phase-number">{{ loop.index }}</span>
+        <div class="phase-content">
+            <div class="phase-description">{{ phase.description }}</div>
+            {% if phase.time %}<span class="phase-time">{{ phase.time|join(' ') }}</span>{% endif %}
+            {% if phase.ingredients %}
+            <ul class="phase-ingredients-list">
+                {% for idx in phase.ingredients %}
+                <li>{{ recipe.ingredients[idx].name }}{% if recipe.ingredients[idx].amount %} {{ recipe.ingredients[idx].amount|format_amount }}{% endif %}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+    </li>
+    {% endfor %}
+</ol>
+{% endif %}
+{% endif %}
 
 {% endblock %}

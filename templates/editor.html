@@ -7,33 +7,316 @@
     <h1>{% if is_new %}Uusi resepti{% else %}Muokkaa reseptiä{% endif %}</h1>
 </header>
 
-<form method="post" action="{{ url_for('new_recipe') if is_new else url_for('edit_recipe', slug=slug) }}">
+<form method="post" id="recipe-form" action="{{ url_for('new_recipe') if is_new else url_for('edit_recipe', slug=slug) }}">
+    <input type="hidden" name="recipe_json" id="recipe-json">
+
     {% if is_new %}
     <label for="slug">
-        Tiedostonimi (ilman .cook)
+        Tiedostonimi (slug)
         <input type="text" id="slug" name="slug" value="{{ slug }}" placeholder="esim. kana-curry" required>
     </label>
     {% endif %}
-    
-    <label for="content">
-        Reseptin sisältö (Cooklang)
-        <textarea id="content" name="content" class="editor" required>{{ content }}</textarea>
+
+    <label for="title">
+        Reseptin nimi
+        <input type="text" id="title" placeholder="esim. Tonnikalapasta" required>
     </label>
-    
-    <details>
-        <summary>Cooklang-ohjeet</summary>
-        <table>
-            <tr><td><code>@raaka-aine{määrä}</code></td><td>Raaka-aine määrällä</td></tr>
-            <tr><td><code>@raaka-aine{}</code></td><td>Raaka-aine ilman määrää</td></tr>
-            <tr><td><code># Osio</code></td><td>Osion otsikko</td></tr>
-            <tr><td><code>>> Nimi</code></td><td>Reseptin nimi</td></tr>
-            <tr><td><code>~{15 minuuttia}</code></td><td>Aika</td></tr>
-        </table>
-    </details>
-    
-    <div class="btn-group">
+
+    <label>
+        <input type="checkbox" id="sectioned-toggle" onchange="toggleSectioned()">
+        Osioitu resepti
+    </label>
+
+    <!-- Simple (non-sectioned) mode -->
+    <div id="simple-mode">
+        <h3>Raaka-aineet</h3>
+        <div id="simple-ingredients"></div>
+        <button type="button" class="secondary outline small-btn" onclick="addIngredient(document.getElementById('simple-ingredients'))">+ Lisää raaka-aine</button>
+
+        <h3>Vaiheet</h3>
+        <div id="simple-phases"></div>
+        <button type="button" class="secondary outline small-btn" onclick="addPhase(document.getElementById('simple-phases'), document.getElementById('simple-ingredients'))">+ Lisää vaihe</button>
+    </div>
+
+    <!-- Sectioned mode -->
+    <div id="sectioned-mode" style="display:none;">
+        <div id="sections-container"></div>
+        <button type="button" class="secondary outline small-btn" onclick="addSection()">+ Lisää osio</button>
+    </div>
+
+    <div class="btn-group" style="margin-top:1.5rem;">
         <button type="submit">Tallenna</button>
         <a href="{{ url_for('recipes') }}" role="button" class="secondary outline">Peruuta</a>
     </div>
 </form>
+
+<script>
+// ============ State helpers ============
+let sectionCounter = 0;
+
+function generateId() {
+    return 'id-' + (++sectionCounter);
+}
+
+// ============ Ingredient rows ============
+
+function createIngredientRow(data) {
+    const row = document.createElement('div');
+    row.className = 'ingredient-row';
+    const id = generateId();
+    row.dataset.id = id;
+    row.innerHTML = `
+        <input type="text" class="ing-name" placeholder="Raaka-aine" value="${esc(data?.name || '')}" oninput="updateIngredientCheckboxes()">
+        <input type="text" class="ing-amount" placeholder="Määrä" value="${esc(amountVal(data?.amount))}">
+        <input type="text" class="ing-unit" placeholder="Yksikkö" value="${esc(amountUnit(data?.amount))}">
+        <button type="button" class="remove-btn" onclick="removeRow(this)">&times;</button>
+    `;
+    return row;
+}
+
+function addIngredient(container, data) {
+    container.appendChild(createIngredientRow(data));
+    updateIngredientCheckboxes();
+}
+
+// ============ Phase rows ============
+
+function createPhaseRow(ingredientsContainer, data, ingredients) {
+    const row = document.createElement('div');
+    row.className = 'phase-row';
+    row.innerHTML = `
+        <div class="phase-header">
+            <input type="text" class="phase-desc" placeholder="Valmistusohje" value="${esc(data?.description || '')}">
+            <button type="button" class="remove-btn" onclick="removeRow(this)">&times;</button>
+        </div>
+        <div class="phase-ingredients"></div>
+    `;
+    row._ingredientsContainer = ingredientsContainer;
+    // After adding to DOM, populate checkboxes
+    setTimeout(() => {
+        refreshPhaseCheckboxes(row, data?.ingredients || [], ingredients);
+    }, 0);
+    return row;
+}
+
+function addPhase(container, ingredientsContainer, data, ingredients) {
+    container.appendChild(createPhaseRow(ingredientsContainer, data, ingredients));
+}
+
+function refreshPhaseCheckboxes(phaseRow, selectedIndices, ingredientsList) {
+    const container = phaseRow._ingredientsContainer || phaseRow.closest('.editor-section')?.querySelector('.section-ingredients') || document.getElementById('simple-ingredients');
+    const ingRows = container.querySelectorAll('.ingredient-row');
+    const checkDiv = phaseRow.querySelector('.phase-ingredients');
+    checkDiv.innerHTML = '';
+
+    ingRows.forEach((ingRow, idx) => {
+        const name = ingRow.querySelector('.ing-name').value || `Raaka-aine ${idx + 1}`;
+        const label = document.createElement('label');
+        label.className = 'phase-ing-check';
+        const checked = selectedIndices.includes(idx) ? 'checked' : '';
+        label.innerHTML = `<input type="checkbox" value="${idx}" ${checked}> ${esc(name)}`;
+        checkDiv.appendChild(label);
+    });
+}
+
+function updateIngredientCheckboxes() {
+    // Update simple mode
+    const simplePhases = document.getElementById('simple-phases');
+    if (simplePhases) {
+        const simpleIngs = document.getElementById('simple-ingredients');
+        simplePhases.querySelectorAll('.phase-row').forEach(phaseRow => {
+            const currentChecked = getCheckedIndices(phaseRow);
+            refreshPhaseCheckboxes(phaseRow, currentChecked);
+        });
+    }
+    // Update sectioned mode
+    document.querySelectorAll('.editor-section').forEach(section => {
+        const ingContainer = section.querySelector('.section-ingredients');
+        section.querySelectorAll('.phase-row').forEach(phaseRow => {
+            const currentChecked = getCheckedIndices(phaseRow);
+            phaseRow._ingredientsContainer = ingContainer;
+            refreshPhaseCheckboxes(phaseRow, currentChecked);
+        });
+    });
+}
+
+function getCheckedIndices(phaseRow) {
+    const checks = phaseRow.querySelectorAll('.phase-ingredients input[type="checkbox"]:checked');
+    return Array.from(checks).map(c => parseInt(c.value));
+}
+
+// ============ Remove row ============
+
+function removeRow(btn) {
+    const row = btn.closest('.ingredient-row, .phase-row, .editor-section');
+    if (row) {
+        row.remove();
+        updateIngredientCheckboxes();
+    }
+}
+
+// ============ Sections ============
+
+function createSection(data) {
+    const section = document.createElement('div');
+    section.className = 'editor-section';
+    const title = data?.title || '';
+    section.innerHTML = `
+        <div class="section-header">
+            <input type="text" class="section-title" placeholder="Osion nimi" value="${esc(title)}">
+            <button type="button" class="remove-btn" onclick="removeRow(this)">&times;</button>
+        </div>
+        <h4>Raaka-aineet</h4>
+        <div class="section-ingredients"></div>
+        <button type="button" class="secondary outline small-btn" onclick="addIngredient(this.previousElementSibling)">+ Lisää raaka-aine</button>
+        <h4>Vaiheet</h4>
+        <div class="section-phases"></div>
+        <button type="button" class="secondary outline small-btn" onclick="addPhase(this.previousElementSibling, this.closest('.editor-section').querySelector('.section-ingredients'))">+ Lisää vaihe</button>
+    `;
+
+    // Populate ingredients
+    const ingContainer = section.querySelector('.section-ingredients');
+    if (data?.ingredients) {
+        data.ingredients.forEach(ing => {
+            ingContainer.appendChild(createIngredientRow(ing));
+        });
+    }
+
+    // Populate phases
+    const phaseContainer = section.querySelector('.section-phases');
+    if (data?.phases) {
+        data.phases.forEach(p => {
+            const phaseRow = createPhaseRow(ingContainer, p, data.ingredients);
+            phaseContainer.appendChild(phaseRow);
+        });
+    }
+
+    return section;
+}
+
+function addSection(data) {
+    const container = document.getElementById('sections-container');
+    container.appendChild(createSection(data));
+    updateIngredientCheckboxes();
+}
+
+// ============ Toggle sectioned ============
+
+function toggleSectioned() {
+    const isSectioned = document.getElementById('sectioned-toggle').checked;
+    document.getElementById('simple-mode').style.display = isSectioned ? 'none' : '';
+    document.getElementById('sectioned-mode').style.display = isSectioned ? '' : 'none';
+}
+
+// ============ Build JSON ============
+
+function collectIngredients(container) {
+    const ingredients = [];
+    container.querySelectorAll('.ingredient-row').forEach(row => {
+        const name = row.querySelector('.ing-name').value.trim();
+        if (!name) return;
+        const amountStr = row.querySelector('.ing-amount').value.trim();
+        const unit = row.querySelector('.ing-unit').value.trim();
+        const amount = [];
+        if (amountStr) amount.push(amountStr);
+        if (unit) amount.push(unit);
+        ingredients.push({ name, amount });
+    });
+    return ingredients;
+}
+
+function collectPhases(container) {
+    const phases = [];
+    container.querySelectorAll('.phase-row').forEach(row => {
+        const description = row.querySelector('.phase-desc').value.trim();
+        if (!description) return;
+        const indices = getCheckedIndices(row);
+        const phase = { description };
+        if (indices.length > 0) phase.ingredients = indices;
+        phases.push(phase);
+    });
+    return phases;
+}
+
+function buildJson() {
+    const title = document.getElementById('title').value.trim();
+    const isSectioned = document.getElementById('sectioned-toggle').checked;
+
+    if (isSectioned) {
+        const sections = [];
+        document.querySelectorAll('.editor-section').forEach(sec => {
+            const sTitle = sec.querySelector('.section-title').value.trim();
+            const ingredients = collectIngredients(sec.querySelector('.section-ingredients'));
+            const phases = collectPhases(sec.querySelector('.section-phases'));
+            sections.push({ title: sTitle || 'Osio', ingredients, phases });
+        });
+        return { title, sections };
+    } else {
+        const ingredients = collectIngredients(document.getElementById('simple-ingredients'));
+        const phases = collectPhases(document.getElementById('simple-phases'));
+        return { title, ingredients, phases };
+    }
+}
+
+// ============ Load from JSON ============
+
+function loadFromJson(data) {
+    if (!data) return;
+
+    document.getElementById('title').value = data.title || '';
+
+    if (data.sections && data.sections.length > 0) {
+        document.getElementById('sectioned-toggle').checked = true;
+        toggleSectioned();
+        data.sections.forEach(sec => addSection(sec));
+    } else {
+        document.getElementById('sectioned-toggle').checked = false;
+        toggleSectioned();
+        const ingContainer = document.getElementById('simple-ingredients');
+        const phaseContainer = document.getElementById('simple-phases');
+        if (data.ingredients) {
+            data.ingredients.forEach(ing => addIngredient(ingContainer, ing));
+        }
+        if (data.phases) {
+            data.phases.forEach(p => addPhase(phaseContainer, ingContainer, p, data.ingredients));
+        }
+    }
+}
+
+// ============ Helpers ============
+
+function esc(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML.replace(/"/g, '&quot;');
+}
+
+function amountVal(amount) {
+    if (!amount || amount.length === 0) return '';
+    return amount[0] || '';
+}
+
+function amountUnit(amount) {
+    if (!amount || amount.length < 2) return '';
+    return amount[1] || '';
+}
+
+// ============ Init ============
+
+document.getElementById('recipe-form').addEventListener('submit', function(e) {
+    const json = buildJson();
+    document.getElementById('recipe-json').value = JSON.stringify(json);
+});
+
+// Load existing data
+const recipeData = {{ recipe_data | tojson }};
+if (recipeData) {
+    loadFromJson(recipeData);
+} else {
+    // New recipe: add one empty ingredient and one empty phase
+    addIngredient(document.getElementById('simple-ingredients'));
+    addPhase(document.getElementById('simple-phases'), document.getElementById('simple-ingredients'));
+}
+</script>
 {% endblock %}

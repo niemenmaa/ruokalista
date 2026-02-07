@@ -1,12 +1,13 @@
 """
-Ruokalista - Simple Cooklang recipe manager with meal planning.
+Ruokalista - JSON recipe manager with meal planning.
 """
+import json
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash, Response
 from pathlib import Path
 from datetime import date, timedelta
 
-from cooklang import load_all_recipes, load_recipe, save_recipe, parse_recipe
+from recipes import load_all_recipes, load_recipe, save_recipe, recipe_to_dict, all_ingredients, format_amount
 from models import (
     get_week_start, get_week_dates, get_all_templates, get_template, create_template,
     delete_template, update_template_name, get_template_meals, add_template_meal, remove_template_meal,
@@ -25,6 +26,9 @@ DAYS_FI = ['Maanantai', 'Tiistai', 'Keskiviikko', 'Torstai', 'Perjantai', 'Lauan
 # Configuration from environment
 CHEFS = [c.strip() for c in os.environ.get('CHEFS', '').split(',') if c.strip()]
 MEAL_SLOTS = int(os.environ.get('MEAL_SLOTS', '5'))
+
+app.jinja_env.filters['format_amount'] = format_amount
+app.jinja_env.globals['all_ingredients'] = all_ingredients
 
 
 def get_recipes_dict():
@@ -196,30 +200,35 @@ def recipe(slug):
 
 @app.route('/recipe/<slug>/edit', methods=['GET', 'POST'])
 def edit_recipe(slug):
-    """Edit a recipe."""
+    """Edit a recipe with structured form."""
     filepath = None
-    for f in RECIPES_PATH.rglob('*.cook'):
+    for f in RECIPES_PATH.rglob('*.json'):
         if f.stem == slug:
             filepath = f
             break
 
     if request.method == 'POST':
-        content = request.form.get('content', '')
-        if filepath:
-            save_recipe(filepath, content)
-        else:
-            # New recipe
-            new_slug = request.form.get('slug', slug)
-            filepath = RECIPES_PATH / "arkiruuat" / f"{new_slug}.cook"
-            save_recipe(filepath, content)
+        raw = request.form.get('recipe_json', '')
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            flash('Virheellinen JSON', 'error')
+            return render_template('editor.html', slug=slug, recipe_data=None, is_new=filepath is None)
+
+        if not filepath:
+            filepath = RECIPES_PATH / "arkiruuat" / f"{slug}.json"
+
+        save_recipe(filepath, data)
+        sync()
         flash('Resepti tallennettu', 'success')
         return redirect(url_for('recipe', slug=filepath.stem))
 
-    content = ""
+    recipe_data = None
     if filepath:
-        content = filepath.read_text(encoding='utf-8')
+        recipe = load_recipe(filepath)
+        recipe_data = recipe_to_dict(recipe)
 
-    return render_template('editor.html', slug=slug, content=content, is_new=filepath is None)
+    return render_template('editor.html', slug=slug, recipe_data=recipe_data, is_new=filepath is None)
 
 
 @app.route('/recipe/new', methods=['GET', 'POST'])
@@ -227,31 +236,31 @@ def new_recipe():
     """Create a new recipe."""
     if request.method == 'POST':
         slug = request.form.get('slug', '').strip()
-        content = request.form.get('content', '')
+        raw = request.form.get('recipe_json', '')
 
         if not slug:
             flash('Anna reseptille nimi', 'error')
-            return render_template('editor.html', slug='', content=content, is_new=True)
+            return render_template('editor.html', slug='', recipe_data=None, is_new=True)
 
-        # Sanitize slug
-        slug = slug.lower().replace(' ', '-').replace('a', 'a').replace('o', 'o').replace('a', 'a')
+        slug = slug.lower().replace(' ', '-')
 
-        filepath = RECIPES_PATH / "arkiruuat" / f"{slug}.cook"
+        filepath = RECIPES_PATH / "arkiruuat" / f"{slug}.json"
         if filepath.exists():
             flash('Samanniminen resepti on jo olemassa', 'error')
-            return render_template('editor.html', slug=slug, content=content, is_new=True)
+            return render_template('editor.html', slug=slug, recipe_data=None, is_new=True)
 
-        save_recipe(filepath, content)
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            flash('Virheellinen JSON', 'error')
+            return render_template('editor.html', slug=slug, recipe_data=None, is_new=True)
+
+        save_recipe(filepath, data)
+        sync()
         flash('Resepti luotu', 'success')
         return redirect(url_for('recipe', slug=slug))
 
-    # Default template for new recipe
-    template = """>> Reseptin nimi
-
-Lisää @raaka-aine{määrä}.
-Sekoita ja tarjoile.
-"""
-    return render_template('editor.html', slug='', content=template, is_new=True)
+    return render_template('editor.html', slug='', recipe_data=None, is_new=True)
 
 
 # ============ Templates ============
@@ -570,18 +579,18 @@ def shopping():
                 'recipe': recipe,
                 'chef': meal['chef']
             })
-            for ing in recipe.ingredients:
+            for ing in all_ingredients(recipe):
                 key = ing.name.lower()
+                amount_str = format_amount(ing.amount)
                 if key in ingredients:
-                    # Try to combine amounts
-                    if ing.amount and ingredients[key]['amount']:
-                        ingredients[key]['amount'] += f", {ing.amount}"
-                    elif ing.amount:
-                        ingredients[key]['amount'] = ing.amount
+                    if amount_str and ingredients[key]['amount']:
+                        ingredients[key]['amount'] += f", {amount_str}"
+                    elif amount_str:
+                        ingredients[key]['amount'] = amount_str
                 else:
                     ingredients[key] = {
                         'name': ing.name,
-                        'amount': ing.amount
+                        'amount': amount_str
                     }
 
     return render_template('shopping.html',
